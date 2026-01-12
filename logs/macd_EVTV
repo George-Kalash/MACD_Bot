@@ -1,0 +1,1 @@
+{'MACD: {macd:.5f}, Signal: {signal:.5f}, Hist: {hist:.5f}', 'TimeStamp: {bucket_time}'}

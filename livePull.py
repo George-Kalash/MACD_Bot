@@ -11,7 +11,7 @@ RESET = '\033[0m'
 color = RESET
 SHOULD_PRINT_BARS = False
 
-barAggregator = BarAggregator(interval_seconds=5)
+barAggregator = BarAggregator(interval_seconds=1)
 
 latest = {}
 last_seen = {}
@@ -54,7 +54,8 @@ def on_message(msg):
         color = RED
       print(f"Latest completed bar: {color}{latest_completed_bar}{RESET}")
       try: 
-        with open(f"log_{symbol}.txt", "a") as f:
+        os.makedirs("logs", exist_ok=True)
+        with open(f"logs/log_{symbol}", "a") as f:
           f.write(f"{latest_completed_bar}\n")
       except Exception as e:
         print(f"Error writing to log file: {e}")
@@ -63,6 +64,12 @@ def on_message(msg):
 
   if len(barAggregator.bars) > 26:
     macd, signal, hist = compute_macd(barAggregator.bars)
+    macd_log = {"TimeStamp: {bucket_time}","MACD: {macd:.5f}, Signal: {signal:.5f}, Hist: {hist:.5f}"}
+    try: 
+      with open(f"logs/macd_{symbol}", "a") as f:
+        f.write(f"{macd_log}\n")
+    except Exception as e:
+      print(f"Error writing MACD to log file: {e}")
     print(f"MACD: {macd:.5f}, Signal: {signal:.5f}, Hist: {hist:.5f}")
 
   if prev is None or prev["price"] != price or prev["time"] != ts:
