@@ -10,9 +10,9 @@ GREEN = '\033[92m'
 RESET = '\033[0m'
 color = RESET
 SHOULD_PRINT_BARS = False
-INT_SECONDS = 300
+INT_SECONDS = 10
 
-barAggregator = BarAggregator(interval_seconds=300)
+barAggregator = BarAggregator(interval_seconds=INT_SECONDS)
 
 latest = {}
 last_seen = {}
@@ -20,18 +20,30 @@ latest_completed_bar = None
 macd_logs = []
 macd_log = {}
 
+test_results = []
+
+can_SELL = False
+can_BUY = True
+THRESHOLD = 0.01
+
+buy_price = 0
+total_return = 0
+
+max_drawdown = 0
+
 def shouldBuy(macd, signal, hist):
   # Simple MACD strategy: Buy when MACD crosses above Signal line
-  return macd > signal and hist > 0 and abs(macd - signal) < 0.008
+  return abs(hist) < THRESHOLD 
 
 def shouldSell(macd, signal, hist):
   # Simple MACD strategy: Sell when MACD crosses below Signal line
   if len(macd_logs) < 2:
     return False
-  return macd < signal and hist < 0 and macd_logs[-1]["macd"] < macd_logs[-2]["macd"]
+  return macd < macd_logs[-2]["macd"] and macd > signal and hist > 0
 
 
 def on_message(msg):
+  global can_BUY, can_SELL, buy_price, total_return, max_drawdown
   symbol = msg["id"]
   price = msg["price"]
   ts = msg["time"]
@@ -94,10 +106,19 @@ def on_message(msg):
       print(f"Error writing MACD to log file: {e}")
     if SHOULD_PRINT_BARS:
       print(f"MACD: {macd:.5f}, Signal: {signal:.5f}, Hist: {hist:.5f}")
-    if shouldBuy(macd, signal, hist):
-      print(f"{GREEN}Signal to BUY detected!{RESET}, Price : {price}, Time: {ts}") 
-    elif shouldSell(macd, signal, hist):
-      print(f"{RED}Signal to SELL detected!{RESET}, Price : {price}, Time: {ts}")
+    if can_BUY and shouldBuy(macd, signal, hist):
+      test_results.append(f"BUY signal at {barAggregator.bars[-1]['bucket']} with price {price}")
+      can_BUY = False
+      can_SELL = True
+      buy_price = price
+      print(f"BUY signal at {barAggregator.bars[-1]['bucket']} with price {price}")
+    elif can_SELL and shouldSell(macd, signal, hist):
+      test_results.append(f"SELL signal at {barAggregator.bars[-1]['bucket']} with price {price}")
+      can_SELL = False
+      can_BUY = True
+      total_return += (price - buy_price)
+      max_drawdown = min(max_drawdown, price - buy_price)
+      print(f"SELL signal at {barAggregator.bars[-1]['bucket']} with price {price}, retutn: {(price - buy_price)}")
   if prev is None or prev["price"] != price or prev["time"] != ts:
     last_seen[symbol] = msg
     # print(last_seen[symbol])

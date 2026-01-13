@@ -4,5 +4,3 @@ asyncio
 
 pandas
 
-os
-
