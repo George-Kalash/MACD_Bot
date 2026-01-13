@@ -3,9 +3,9 @@ import yahooquery as yq
 import pandas as pd
 import asyncio
 
-tickers = yq.Ticker('mu')
+tickers = yq.Ticker('OPEN')
 
-df = tickers.history(period='60d', interval='15m')
+df = tickers.history(period='60d', interval='5m')
 # place historic_data.csv in the tests/ directory
 df.reset_index(inplace=True)
 with open('tests/historic_data.csv', 'w') as f:
