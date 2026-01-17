@@ -12,3 +12,4 @@ def compute_macd(bars):
     hist = macd - signal
 
     return macd.iloc[-1], signal.iloc[-1], hist.iloc[-1]
+
